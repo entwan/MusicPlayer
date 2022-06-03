@@ -91,8 +91,9 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                play(sbPosition);
                 mediaPlayer.seekTo(sbPosition.getProgress());
+                play(sbPosition);
+
             }
         });
 
