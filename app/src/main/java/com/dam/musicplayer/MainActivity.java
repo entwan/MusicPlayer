@@ -14,6 +14,7 @@ import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
+    //debut version v2
     private static final String TAG = "MainActivity";
     /** Ajout automatique de la lecture **/
     MediaPlayer mediaPlayer = new MediaPlayer();
