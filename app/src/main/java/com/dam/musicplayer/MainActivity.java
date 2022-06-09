@@ -237,62 +237,153 @@ public class MainActivity extends AppCompatActivity {
         return songDuration;
     }
 
+    // Gestion des boutons
+    private void prevSong(){
+        btnPrev.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(songIndex > 0) {
+                    songIndex--;
+                } else {
+                    songIndex = songArrayList.size() - 1;
+                }
+                playSong(songIndex);
+            }
+        });
+    }
+
+    private void nextSong(){
+        btnNext.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(songIndex < songArrayList.size()-1) {
+                    songIndex++;
+                }
+                else {
+                    songIndex = 0;
+                }
+                playSong(songIndex);
+            }
+        });
+    }
+
+    private void setPause() {
+        btnPlay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mediaPlayer.isPlaying()){
+                    mediaPlayer.pause();
+                    btnPlay.setImageResource(R.drawable.ic_play_48_w);
+                } else {
+                    mediaPlayer.start();
+                    btnPlay.setImageResource(R.drawable.ic_pause_48_w);
+                }
+            }
+        });
+    }
+
     private void setSong() {
+        // Intialisation des composants
+        init();
 
-    }
+        //Remplissage du tableau avec le resultat du ContentProvider
+        getAudioFiles();
 
-    public void play(View view) {
-        mediaPlayer.start();
-        Log.i(TAG, "play");
-    }
-
-    public void pause(View view) {
-        mediaPlayer.pause();
-        Log.i(TAG, "pause");
-    }
-
-
-
-    private void position() {
-        // Association de seekbar au Java
-        SeekBar sbPosition = findViewById(R.id.sbPosition);
-
-        // définir la valeur max de la seekbar position
-        // getDuration renvoie le temps total de la chanson
-        sbPosition.setMax(mediaPlayer.getDuration());
-
+        //Gestion de la seekBar
         // Part one : la gestion de l'utilisation
         sbPosition.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.i(TAG, "Position dans le morceau : " + Integer.toString(progress));
-//                Log.i(TAG, "onProgressChanged: sbPosition.getProgress() : " + Integer.toString(sbPosition.getProgress()));
 
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                pause(sbPosition);
+                mediaPlayer.pause();
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                mediaPlayer.seekTo(sbPosition.getProgress());
-                play(sbPosition);
-
+                currentPos = sbPosition.getProgress();
+                mediaPlayer.seekTo((int) currentPos);
+                mediaPlayer.start();
             }
         });
 
-        // Part two : Gestion du déplacement du curseur par l'application
-        new Timer().scheduleAtFixedRate(new TimerTask() {
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
-            public void run() {
-                // Déplacement automatique
-                sbPosition.setProgress(mediaPlayer.getCurrentPosition());
-            }
-        }, 0, 300);
+            public void onCompletion(MediaPlayer mp) {
+                if(songIndex < songArrayList.size()-1) {
+                    songIndex++;
+                }
+                else {
+                    songIndex = 0;
+                }
+                playSong(songIndex);
 
+//                songIndex++;
+//                if(songIndex < songArrayList.size()) {
+//                    playSong(songIndex);
+//                }
+//                else {
+//                    songIndex = 0;
+//                    playSong(songIndex);
+//                }
+            }
+        });
+
+        if(!songArrayList.isEmpty()) {
+            playSong(songIndex);
+            prevSong();
+            setPause();
+            nextSong();
+        }
     }
+
+
+
+
+
+//    private void position() {
+//        // Association de seekbar au Java
+//        SeekBar sbPosition = findViewById(R.id.sbPosition);
+//
+//        // définir la valeur max de la seekbar position
+//        // getDuration renvoie le temps total de la chanson
+//        sbPosition.setMax(mediaPlayer.getDuration());
+//
+//        // Part one : la gestion de l'utilisation
+//        sbPosition.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+//            @Override
+//            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+//                Log.i(TAG, "Position dans le morceau : " + Integer.toString(progress));
+////                Log.i(TAG, "onProgressChanged: sbPosition.getProgress() : " + Integer.toString(sbPosition.getProgress()));
+//
+//            }
+//
+//            @Override
+//            public void onStartTrackingTouch(SeekBar seekBar) {
+//                pause(sbPosition);
+//            }
+//
+//            @Override
+//            public void onStopTrackingTouch(SeekBar seekBar) {
+//                mediaPlayer.seekTo(sbPosition.getProgress());
+//                play(sbPosition);
+//
+//            }
+//        });
+//
+//        // Part two : Gestion du déplacement du curseur par l'application
+//        new Timer().scheduleAtFixedRate(new TimerTask() {
+//            @Override
+//            public void run() {
+//                // Déplacement automatique
+//                sbPosition.setProgress(mediaPlayer.getCurrentPosition());
+//            }
+//        }, 0, 300);
+//
+//    }
 
     //END Volume
 
@@ -302,14 +393,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if(checkPermission()) {
+            setSong();
+        }
 
 
-
-        //en attendant Godot
-
-        init();
-        checkPermission();
-        getAudioFiles();
 
     }
 
@@ -317,5 +405,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         mediaPlayer.stop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(mediaPlayer!=null) {
+            mediaPlayer.release();
+        }
     }
 }
